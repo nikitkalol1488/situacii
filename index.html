@@ -256,6 +256,8 @@ function decode(code){const raw=String(code).toUpperCase().replace(/[^A-Z0-9]/g,
  return {name:name||'Гость',ans}}
 function extract(text){const out=[],seen={};const t=String(text||'');const part=t.indexOf('#')>=0?t.slice(t.lastIndexOf('#')+1):t;
  (part.toUpperCase().match(/U[A-Z2-9]{4}(?:-[A-Z2-9]{1,5}){2,}/g)||[]).forEach(c=>{const d=decode(c);if(d){const k=encode(d);if(!seen[k]){seen[k]=1;d.code=k;out.push(d)}}});return out}
+const isOld=t=>{t=String(t||'');t=t.indexOf('#')>=0?t.slice(t.lastIndexOf('#')+1):t;return /(^|[^A-Z0-9])T[A-Z2-9]{4}-[A-Z2-9]{5}-/.test(t.toUpperCase())};
+let oldLink=false;
 const ONLINE=/^https?:/.test(location.protocol);
 function linkFor(codes){return ONLINE?location.origin+location.pathname+'#'+codes.join('.'):null}
 
@@ -270,7 +272,7 @@ const byKey=(arr,k)=>arr.find(x=>x.k===k);
 
 /* ---------- состояние ---------- */
 let me=LS.get('me')||{name:'',ans:[],v:2};
-if(me.v!==2){for(let i=18;i<24;i++)me.ans[i]=null;me.v=2;LS.del('partner')} // глава 4 во второй версии другая: её ответы сбрасываются
+if(me.v!==2){for(let i=18;i<24;i++)me.ans[i]=null;me.v=2;me.mig=1;LS.del('partner');LS.set('me',me)} // глава 4 во второй версии другая: её ответы сбрасываются
 let partner=LS.get('partner')||null; // {name,ans,code}
 if(partner&&!decode(partner.code||''))partner=null;
 const has=i=>typeof me.ans[i]==='number';
@@ -302,6 +304,8 @@ function cover(){
  const p=partner&&(!done()||partner.code!==encode(me))?partner:null;
  let h=`<div class="kicker">тест</div><h1 class="title">30 ситуаций <em>про тебя</em></h1><p class="lead">Отвечай, как поступаешь ты, а не как правильно. Займёт минут пять.</p>`;
  if(p)h+=`<p class="hand" style="margin-top:12px">Тебе пришёл результат: ${esc(p.name)}. В конце сравните ответы.</p>`;
+ if(me.mig&&!done())h+=`<p class="hand" style="margin-top:12px">Тест обновился: в четвёртой главе шесть новых вопросов. Остальные твои ответы сохранены, жми «Продолжить».</p>`;
+ else if(oldLink)h+=`<p class="hand" style="margin-top:12px">Эта ссылка от первой версии теста и больше не работает. Попроси новую.</p>`;
  if(done())h+=`<button class="btn" data-act="result">Мой результат</button>`+(p?`<button class="btn alt" data-act="pair">Сравнить</button>`:'')+`<br><button class="link" data-act="again">пройти заново</button>`;
  else if(firstOpen()>0&&me.name)h+=`<button class="btn" data-act="resume">Продолжить</button><br><button class="link" data-act="again">начать сначала</button>`;
  else h+=`<button class="btn" data-act="start">Начать</button>`;
@@ -334,15 +338,18 @@ function shareBlock(){
  <textarea class="code" id="cd" placeholder="${ONLINE?'ссылка или код':'код'}"></textarea><div class="err" id="er"></div><button class="btn sm" data-act="usecode">Сравнить</button>`;
  return h}
 
-function result(fresh){
- const s=score(me.ans),v0=s.v[0],v1=s.v[1],k0=s.k[0];
- let h=`<div class="rhead"><div class="kicker">результат</div><h1 class="title">${esc(me.name)}, вот <em>твой портрет</em></h1><p class="lead">Пять глав, пять коротких выводов. В конце можно сравнить ответы с другим человеком.</p>${partner&&partner.code!==encode(me)?`<button class="btn alt" data-act="pair">Сравнить: ${esc(me.name)} × ${esc(partner.name)}</button>`:''}</div>`;
+function result(fresh,other){
+ const P=other||me,own=!other,s=score(P.ans),v0=s.v[0],v1=s.v[1],k0=s.k[0],pn=esc(P.name);
+ let h=`<div class="rhead"><div class="kicker">результат</div><h1 class="title">${own?pn+', вот <em>твой портрет</em>':pn+': <em>портрет</em>'}</h1>`;
+ if(own)h+=`<p class="lead">Пять глав, пять коротких выводов. Сохрани свою ссылку: по ней этот результат откроется в любой момент, даже если закрыть страницу.</p><button class="btn sm" data-act="share" data-what="me">Отправить ссылку</button><button class="btn sm alt" data-act="copy" data-what="me">Скопировать</button>${partner&&partner.code!==encode(me)?`<br><button class="btn alt" data-act="pair">Сравнить: ${esc(me.name)} × ${esc(partner.name)}</button>`:''}`;
+ else h+=`<p class="lead">Так тест описал этого человека. Тексты обращены к нему, поэтому на «ты».</p><button class="btn" data-act="take">Пройти тест и сравнить</button><br><button class="link" data-act="mine">это мой результат</button>`;
+ h+=`</div>`;
  h+=sec(CH[0].col,`<div class="kicker">${CH[0].kick}</div><h3>${VG[v0.k].n}</h3><p>${VG[v0.k].t}</p><p>На втором месте: ${VG[v1.k].n.toLowerCase()}.</p><div class="bars">${'SWOD'.split('').map(k=>bar(VG[k].n,pct(byKey(s.v,k).s))).join('')}</div>`);
  h+=sec(CH[1].col,`<div class="kicker">${CH[1].kick}</div><h3>${KS[k0.k].n}</h3><p>${KS[k0.k].t}</p><div class="bars">${'CLAP'.split('').map(k=>bar(KS[k].n,pct(byKey(s.k,k).s))).join('')}</div>`);
- h+=sec(CH[2].col,`<div class="kicker">${CH[2].kick}</div><h3>${RC[s.chrono].n}</h3><p>${RC[s.chrono].t}</p>${line('ночь','утро',mk(s.m/8,'',ini(me.name)))}<p>${TEMPO[s.tempo]}</p><p>${CHARGE[s.charge]}</p>`);
- h+=sec(CH[3].col,`<div class="kicker">${CH[3].kick}</div><h3>${PQ[s.quad].n}</h3><p>${PQ[s.quad].t}</p>${line('по плану','по ходу',mk(s.d/6,'',ini(me.name)))}${line('головой','чутьём',mk(s.w/6,'',ini(me.name)))}`);
- h+=sec(CH[4].col,`<div class="kicker">${CH[4].kick}</div><h3>Инструкция к тебе</h3><ul class="ins">${s.i.map((a,n)=>`<li>${INS[n][a]}</li>`).join('')}</ul><p class="hand">Покажи её тому, кому она пригодится.</p>`);
- h+=sec('#FF4F9A',shareBlock());
+ h+=sec(CH[2].col,`<div class="kicker">${CH[2].kick}</div><h3>${RC[s.chrono].n}</h3><p>${RC[s.chrono].t}</p>${line('ночь','утро',mk(s.m/8,'',ini(P.name)))}<p>${TEMPO[s.tempo]}</p><p>${CHARGE[s.charge]}</p>`);
+ h+=sec(CH[3].col,`<div class="kicker">${CH[3].kick}</div><h3>${PQ[s.quad].n}</h3><p>${PQ[s.quad].t}</p>${line('по плану','по ходу',mk(s.d/6,'',ini(P.name)))}${line('головой','чутьём',mk(s.w/6,'',ini(P.name)))}`);
+ h+=sec(CH[4].col,`<div class="kicker">${CH[4].kick}</div><h3>${own?'Инструкция к тебе':'Инструкция'}</h3><ul class="ins">${s.i.map((a,n)=>`<li>${INS[n][a]}</li>`).join('')}</ul>${own?'<p class="hand">Покажи её тому, кому она пригодится.</p>':''}`);
+ if(own)h+=sec('#FF4F9A',shareBlock());
  h+=`<p class="foot">Вопросы составлены по мотивам научных опросников: ценности — Шалом Шварц, поведение в споре — Томас и Килманн, режим дня — шкала «утро — вечер» Хорна и Эстберга, решения — опросник стилей Скотта и Брюса. Последняя глава авторская. Тест короткий, поэтому это набросок, а не диагноз.</p><button class="link" data-act="home" style="margin-left:4px">в начало</button>`;
  show(h,{long:true});if(fresh)setTimeout(confetti,400)}
 
@@ -389,14 +396,14 @@ let pairNow=null;
 
 function codeScreen(msg){show(`<div class="kicker">код</div><h1 class="title">Вставь <em>код</em></h1><p class="lead">${ONLINE?'Ссылку или код':'Код'}, который тебе прислали. Если кодов два, сравнение откроется сразу.</p><textarea class="code" id="cd"></textarea><div class="err" id="er">${msg||''}</div><button class="btn" data-act="usecode">Дальше</button><br><button class="link" data-act="home">назад</button>`)}
 
-function useCodes(list){ // вернуть текст ошибки или null
- if(!list.length)return 'Не получилось прочитать. Скопируй целиком.';
+function useCodes(list,raw){ // вернуть текст ошибки или null
+ if(!list.length)return isOld(raw)?'Это код от первой версии теста, он больше не читается. Вернись в начало и нажми «Продолжить».':'Не получилось прочитать. Скопируй целиком.';
  const my=done()?encode(me):null;
  if(list.length>=2){pair(list[0],list[1]);return null}
  const p=list[0];
  if(my&&p.code===my)return 'Это твой собственный результат. Нужен код второго человека.';
  partner=p;LS.set('partner',p);
- if(my)pair(me,p);else cover();return null}
+ if(my)pair(me,p);else result(false,p);return null}
 
 function shareText(what){
  if(what==='pair'&&pairNow){const codes=pairNow.map(encode),l=linkFor(codes);return l?`Наше сравнение в тесте «30 ситуаций»: ${l}`:`Наше сравнение в тесте «30 ситуаций». Коды: ${codes.join(' ')}`}
@@ -410,11 +417,13 @@ stage.addEventListener('click',e=>{
  const b=e.target.closest('[data-act]');if(!b)return;const act=b.dataset.act;
  if(act==='copy')return copy(shareText(b.dataset.what),b);
  if(act==='share'){const text=shareText(b.dataset.what);if(navigator.share)navigator.share({text}).catch(()=>{});else copy(text,b);return}
- if(act==='usecode'){const er=useCodes(extract(document.getElementById('cd').value));if(er)document.getElementById('er').textContent=er;return}
+ if(act==='usecode'){const raw=document.getElementById('cd').value;const er=useCodes(extract(raw),raw);if(er)document.getElementById('er').textContent=er;return}
  if(act==='name'){const v=document.getElementById('nm').value.trim().slice(0,12);if(!v){document.getElementById('er').textContent='Напиши имя';return}me.name=v;me.v=2;save();lock=true;return go(firstOpen())}
  if(lock)return;lock=true;
  if(act==='start')nameScreen();
  else if(act==='resume')go(firstOpen());
+ else if(act==='take'){if(me.name&&firstOpen()>0)go(firstOpen());else nameScreen()}
+ else if(act==='mine'){me={name:partner.name,ans:partner.ans.slice(),v:2};save();partner=null;LS.del('partner');result(false)}
  else if(act==='again'){if(b.dataset.sure){me={name:me.name,ans:[],v:2};save();nameScreen()}else{b.dataset.sure=1;b.textContent='точно? ответы сотрутся';lock=false}}
  else if(act==='result')result(false);
  else if(act==='pair')pair(me,partner);
@@ -429,11 +438,11 @@ stage.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='nm'){e.p
 /* ---------- запуск ---------- */
 (function init(){
  stage.innerHTML='';
- const list=extract(location.hash?decodeURIComponent(location.hash):'');
+ const hs=location.hash?decodeURIComponent(location.hash):'';const list=extract(hs);if(!list.length&&isOld(hs)){oldLink=true;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
  if(list.length){try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   if(list.length>=2)return pair(list[0],list[1]);
   const my=done()?encode(me):null;
-  if(list[0].code!==my){partner=list[0];LS.set('partner',partner);if(my)return pair(me,partner)}}
+  if(list[0].code!==my){partner=list[0];LS.set('partner',partner);return my?pair(me,partner):result(false,partner)}}
  cover();
 })();
 </script>
