@@ -332,8 +332,8 @@ const pct=x=>Math.max(6,Math.round(x*100));
 function shareBlock(){
  const my=encode(me);let h=`<div class="kicker">сравнение</div><h3>Сравнить <em>ответы</em></h3>`;
  if(partner&&partner.code!==my)h+=`<p>У тебя уже есть результат: ${esc(partner.name)}.</p><button class="btn alt" data-act="pair">Сравнить: ${esc(me.name)} × ${esc(partner.name)}</button>`;
- h+=`<p><b>1.</b> Отправь ${ONLINE?'свою ссылку':'свой код'} человеку, с которым хочешь сравнить ответы. Он пройдёт тест и сразу увидит сравнение.</p>
- <button class="btn sm" data-act="share" data-what="me">Отправить</button><button class="btn sm alt" data-act="copy" data-what="me">Скопировать</button>
+ h+=`<p><b>1.</b> Скопируй ${ONLINE?'свою ссылку':'свой код'} и отправь человеку, с которым хочешь сравнить ответы. Он пройдёт тест и сразу увидит сравнение.</p>
+ <button class="btn sm" data-act="copy" data-what="me">${ONLINE?'Скопировать ссылку':'Скопировать код'}</button>
  <p style="margin-top:18px"><b>2.</b> Если ${ONLINE?'ссылку':'код'} прислали тебе, вставь сюда:</p>
  <textarea class="code" id="cd" placeholder="${ONLINE?'ссылка или код':'код'}"></textarea><div class="err" id="er"></div><button class="btn sm" data-act="usecode">Сравнить</button>`;
  return h}
@@ -341,7 +341,7 @@ function shareBlock(){
 function result(fresh,other){
  const P=other||me,own=!other,s=score(P.ans),v0=s.v[0],v1=s.v[1],k0=s.k[0],pn=esc(P.name);
  let h=`<div class="rhead"><div class="kicker">результат</div><h1 class="title">${own?pn+', вот <em>твой портрет</em>':pn+': <em>портрет</em>'}</h1>`;
- if(own)h+=`<p class="lead">Пять глав, пять коротких выводов. Сохрани свою ссылку: по ней этот результат откроется в любой момент, даже если закрыть страницу.</p><button class="btn sm" data-act="share" data-what="me">Отправить ссылку</button><button class="btn sm alt" data-act="copy" data-what="me">Скопировать</button>${partner&&partner.code!==encode(me)?`<br><button class="btn alt" data-act="pair">Сравнить: ${esc(me.name)} × ${esc(partner.name)}</button>`:''}`;
+ if(own)h+=`<p class="lead">Пять глав, пять коротких выводов. Скопируй свою ссылку и отправь её в чат: по ней этот результат откроется в любой момент, даже если закрыть страницу.</p><button class="btn sm" data-act="copy" data-what="me">${ONLINE?'Скопировать ссылку':'Скопировать код'}</button>${partner&&partner.code!==encode(me)?`<br><button class="btn alt" data-act="pair">Сравнить: ${esc(me.name)} × ${esc(partner.name)}</button>`:''}`;
  else h+=`<p class="lead">Так тест описал этого человека. Тексты обращены к нему, поэтому на «ты».</p><button class="btn" data-act="take">Пройти тест и сравнить</button><br><button class="link" data-act="mine">это мой результат</button>`;
  h+=`</div>`;
  h+=sec(CH[0].col,`<div class="kicker">${CH[0].kick}</div><h3>${VG[v0.k].n}</h3><p>${VG[v0.k].t}</p><p>На втором месте: ${VG[v1.k].n.toLowerCase()}.</p><div class="bars">${'SWOD'.split('').map(k=>bar(VG[k].n,pct(byKey(s.v,k).s))).join('')}</div>`);
@@ -387,7 +387,7 @@ function pair(A,B){
  // вопросы
  const q1=va===vb?`Что каждый из вас называет словами «${VG[va].n.toLowerCase()}»? Сравните.`:`${an}, что для тебя значит «${VG[va].n.toLowerCase()}»? ${bn}, а для тебя — «${VG[vb].n.toLowerCase()}»?`;
  h+=sec('#FF4F9A',`<div class="kicker">на вечер</div><h3>Три вопроса <em>друг другу</em></h3><ol class="ask"><li>${q1}</li><li>Вспомните последний спор с кем угодно. Что вам тогда было нужно от другого человека?</li><li>Какой пункт в чужой инструкции вас удивил?</li></ol>`);
- h+=sec('#2E4BE0',`<div class="kicker">поделиться</div><h3>Отправить <em>сравнение</em></h3><p>${ONLINE?'По этой ссылке сравнение откроется на любом телефоне.':'По этим двум кодам сравнение откроется на любом телефоне: их вставляют в поле «у меня есть код».'}</p><button class="btn sm" data-act="share" data-what="pair">Отправить</button><button class="btn sm alt" data-act="copy" data-what="pair">Скопировать</button>`);
+ h+=sec('#2E4BE0',`<div class="kicker">поделиться</div><h3>Отправить <em>сравнение</em></h3><p>${ONLINE?'По этой ссылке сравнение откроется на любом телефоне.':'По этим двум кодам сравнение откроется на любом телефоне: их вставляют в поле «у меня есть код».'}</p><button class="btn sm" data-act="copy" data-what="pair">${ONLINE?'Скопировать ссылку':'Скопировать код'}</button>`);
  h+=`<p class="foot">Тест короткий, поэтому это набросок, а не диагноз. Разные ответы — не минус: по ним видно, где вам стоит спрашивать друг друга, а не угадывать.</p><button class="link" data-act="home" style="margin-left:4px">в начало</button>`;
  pairNow=[A,B];
  show(h,{long:true,after:el=>{const c=el.querySelector('#cnt'),t0=performance.now()+600;(function f(t){const k=Math.max(0,Math.min(1,(t-t0)/1100));c.textContent=Math.round(tot*k);if(k<1)requestAnimationFrame(f)})(t0)}});
@@ -405,10 +405,8 @@ function useCodes(list,raw){ // вернуть текст ошибки или nu
  partner=p;LS.set('partner',p);
  if(my)pair(me,p);else result(false,p);return null}
 
-function shareText(what){
- if(what==='pair'&&pairNow){const codes=pairNow.map(encode),l=linkFor(codes);return l?`Наше сравнение в тесте «30 ситуаций»: ${l}`:`Наше сравнение в тесте «30 ситуаций». Коды: ${codes.join(' ')}`}
- const codes=[encode(me)],l=linkFor(codes);return l?`Мой результат теста «30 ситуаций». Пройди тоже, и сравним ответы: ${l}`:`Мой код из теста «30 ситуаций»: ${codes[0]}`}
-function copy(text,btn){const ok=()=>{const t=btn.textContent;btn.textContent='Скопировано';setTimeout(()=>btn.textContent=t,1400)};
+function shareText(what){const codes=(what==='pair'&&pairNow)?pairNow.map(encode):[encode(me)];return linkFor(codes)||codes.join(' ')}
+function copy(text,btn){const ok=()=>{const t=btn.textContent;btn.textContent='Скопировано, вставь в чат';setTimeout(()=>btn.textContent=t,2200)};
  const fb=()=>{const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand('copy');ok()}catch(e){prompt('Скопируй:',text)}ta.remove()};
  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).then(ok,fb);else fb()}
 
