@@ -304,8 +304,7 @@ function cover(){
  const p=partner&&(!done()||partner.code!==encode(me))?partner:null;
  let h=`<div class="kicker">тест</div><h1 class="title">30 ситуаций <em>про тебя</em></h1><p class="lead">Отвечай, как поступаешь ты, а не как правильно. Займёт минут пять.</p>`;
  if(p)h+=`<p class="hand" style="margin-top:12px">Тебе пришёл результат: ${esc(p.name)}. В конце сравните ответы.</p>`;
- if(me.mig&&!done())h+=`<p class="hand" style="margin-top:12px">Тест обновился: в четвёртой главе шесть новых вопросов. Остальные твои ответы сохранены, жми «Продолжить».</p>`;
- else if(oldLink)h+=`<p class="hand" style="margin-top:12px">Эта ссылка от первой версии теста и больше не работает. Попроси новую.</p>`;
+ if(oldLink)h+=`<p class="hand" style="margin-top:12px">Эта ссылка от первой версии теста и больше не работает. Попроси новую.</p>`;
  if(done())h+=`<button class="btn" data-act="result">Мой результат</button>`+(p?`<button class="btn alt" data-act="pair">Сравнить</button>`:'')+`<br><button class="link" data-act="again">пройти заново</button>`;
  else if(firstOpen()>0&&me.name)h+=`<button class="btn" data-act="resume">Продолжить</button><br><button class="link" data-act="again">начать сначала</button>`;
  else h+=`<button class="btn" data-act="start">Начать</button>`;
